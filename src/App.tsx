@@ -8,7 +8,6 @@ import { markLetterMailed, getLetterStatus } from "./utils/api";
 import {
   loadApiKey,
   saveApiKey,
-  clearApiKey,
   loadHistory,
   saveHistory,
 } from "./utils/storage";
