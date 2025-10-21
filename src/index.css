@@ -1,0 +1,15 @@
+@import "tailwindcss";
+
+:root {
+  @apply overscroll-none;
+}
+
+@keyframes flash {
+  0%,
+  100% {
+    background-color: var(--color-red-600);
+  }
+  50% {
+    background-color: var(--color-red-900);
+  }
+}
