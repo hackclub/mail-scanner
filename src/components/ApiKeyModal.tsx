@@ -120,7 +120,7 @@ export function ApiKeyModal({ onSubmit, onScanRequest, onClose, existingApiKey }
             </button>
             <h3 className="text-xl font-bold mb-4 text-white">Scan to Import API Key</h3>
             <div className="bg-white p-4 rounded inline-block">
-              <QRCode value={existingApiKey} size={192} />
+              <QRCode value={`${window.location.origin}/#${existingApiKey}`} size={192} />
             </div>
             <p className="text-xs text-white/60 mt-3">Never share this publicly.</p>
           </div>

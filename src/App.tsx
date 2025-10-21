@@ -29,11 +29,20 @@ function App() {
   const timeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
-    const apiKey = loadApiKey();
+    let apiKey = loadApiKey();
     const history = loadHistory();
     successSetRef.current = new Set(
       history.filter((h) => h.status === "success").map((h) => h.id)
     );
+    
+    // Check URL hash for API key
+    const hash = window.location.hash.slice(1); // Remove the #
+    if (hash.startsWith("th_api_live_")) {
+      apiKey = hash;
+      saveApiKey(apiKey);
+      window.history.replaceState(null, "", window.location.pathname); // Clear hash
+    }
+    
     setState((prev) => ({
       ...prev,
       apiKey,
@@ -111,11 +120,19 @@ function App() {
 
   const handleScan = useCallback(
     async (text: string) => {
-      // Check if it's an API key first
+      // Check if it's an API key first (direct key or URL with hash)
       const trimmedText = text.trim();
+      let apiKey = null;
+      
       if (trimmedText.startsWith("th_api_live_")) {
-        saveApiKey(trimmedText);
-        setState((prev) => ({ ...prev, apiKey: trimmedText }));
+        apiKey = trimmedText;
+      } else if (trimmedText.includes("#th_api_live_")) {
+        apiKey = trimmedText.split("#")[1];
+      }
+      
+      if (apiKey) {
+        saveApiKey(apiKey);
+        setState((prev) => ({ ...prev, apiKey }));
         playSuccess();
         setStatus("apiKeyUpdated", "API key updated", null);
         setHasStarted(true);
