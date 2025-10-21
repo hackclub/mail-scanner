@@ -39,36 +39,11 @@ This builds the frontend and starts the Express server on port 3000.
 
 ## Usage
 
-1. **Enter API Key**: On first load, enter your Hack Club Mail API key
+1. Enter your Hack Club Mail API key in the app. (Or import via QR code)
+2. Point your camera at the QR code on the letter.
+3. Profit!
 
-   - You can also load your API key by scanning a QR code
-   - Optionally check "Store key locally" to persist it in localStorage
-
-2. **Scan QR Codes**: Point your camera at QR codes containing letter URLs
-
-   - Valid format: `https://hack.club/ltr!xxxxxxxx`
-   - The scanner will automatically detect and process codes
-
-3. **Status Colors**:
-
-   - **Gray**: Idle, ready to scan
-   - **Yellow**: Processing request
-   - **Green**: Successfully marked as mailed (800ms)
-   - **Red**: Error occurred (1.5s then returns to idle)
-   - **Flashing Red**: Duplicate scan detected (flashes for 5 seconds, then solid red for 1.5s)
-
-4. **View History**: Previously scanned letters appear in the history list at the bottom
-
-## Features
-
-- **QR Code Scanner**: Real-time scanning with webcam preview
-- **API Key Sharing**: Generate QR codes to share API keys across devices
-- **Duplicate Detection**: Prevents scanning the same letter twice
-- **Status Colors**: Visual feedback for scan results
-- **History Tracking**: View all scanned letters with timestamps
-- **Audio Feedback**: Different sounds for success, error, and duplicate scans
-
-## API Integration
+## API Proxy
 
 For CORS reasons, there is an express server that proxies requests to the Hack Club Mail API:
 
