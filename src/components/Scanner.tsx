@@ -35,7 +35,7 @@ export function Scanner({ enabled, onResult }: ScannerProps) {
         enabled: true,
         draggable: false,
         position: "top-left",
-        size: 240,
+        size: 200,
         mirrored: true,
         padding: 16,
         radius: 8,

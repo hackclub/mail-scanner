@@ -34,7 +34,7 @@ function App() {
     successSetRef.current = new Set(
       history.filter((h) => h.status === "success").map((h) => h.id)
     );
-    
+
     // Check URL hash for API key
     const hash = window.location.hash.slice(1); // Remove the #
     if (hash.startsWith("th_api_live_")) {
@@ -42,7 +42,7 @@ function App() {
       saveApiKey(apiKey);
       window.history.replaceState(null, "", window.location.pathname); // Clear hash
     }
-    
+
     setState((prev) => ({
       ...prev,
       apiKey,
@@ -76,7 +76,8 @@ function App() {
           timeoutRef.current = null;
           setState((prev) => ({
             ...prev,
-            status: "error",
+            status: "idle",
+            message: "Ready to scan",
           }));
         }, 5000);
       } else if (status === "success") {
@@ -123,13 +124,13 @@ function App() {
       // Check if it's an API key first (direct key or URL with hash)
       const trimmedText = text.trim();
       let apiKey = null;
-      
+
       if (trimmedText.startsWith("th_api_live_")) {
         apiKey = trimmedText;
       } else if (trimmedText.includes("#th_api_live_")) {
         apiKey = trimmedText.split("#")[1];
       }
-      
+
       if (apiKey) {
         saveApiKey(apiKey);
         setState((prev) => ({ ...prev, apiKey }));
@@ -299,8 +300,12 @@ function App() {
       {!hasStarted && !showApiKeyModal && state.apiKey && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
           <div className="bg-gray-800 rounded-lg p-6 w-full max-w-md text-center">
-            <h2 className="text-2xl font-bold mb-4 text-white">Ready to Scan</h2>
-            <p className="text-white/80 mb-6">Click the button below to start scanning QR codes</p>
+            <h2 className="text-2xl font-bold mb-4 text-white">
+              Ready to Scan
+            </h2>
+            <p className="text-white/80 mb-6">
+              Click the button below to start scanning QR codes
+            </p>
             <button
               onClick={handleStart}
               className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition-colors"
@@ -316,7 +321,7 @@ function App() {
       )}
 
       <div className="relative z-10 h-screen flex flex-col overflow-hidden">
-        <div className="flex-1 flex flex-col items-center justify-center p-4 pt-32 min-h-0">
+        <div className="flex-1 flex flex-col items-center justify-center p-4 pt-48 md:pt-32 min-h-0">
           <div className="text-center">
             <div className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold font-mono mb-4 break-all px-2">
               {state.lastLetterId || "--"}

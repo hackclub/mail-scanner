@@ -30,11 +30,9 @@ export function HistoryList({ history, onClearHistory }: HistoryListProps) {
           Clear History
         </button>
       </div>
-      <div className="bg-white/10 rounded-lg overflow-hidden max-h-48 overflow-y-auto">
+      <div className="bg-white/10 rounded-lg overflow-hidden max-h-24 md:max-h-48 overflow-y-auto">
         {history.length === 0 ? (
-          <div className="p-4 text-center text-white/60">
-            No scans yet
-          </div>
+          <div className="p-4 text-center text-white/60">No scans yet</div>
         ) : (
           <div className="divide-y divide-white/10">
             {[...history].reverse().map((item, index) => (
@@ -42,10 +40,16 @@ export function HistoryList({ history, onClearHistory }: HistoryListProps) {
                 key={`${item.id}-${item.ts}-${index}`}
                 className="p-3 flex items-center gap-3"
               >
-                <div className={`w-2 h-2 rounded-full flex-shrink-0 ${getStatusColor(item.status)}`} />
+                <div
+                  className={`w-2 h-2 rounded-full flex-shrink-0 ${getStatusColor(
+                    item.status
+                  )}`}
+                />
                 <div className="flex-1 min-w-0">
                   <div className="font-mono font-bold">{item.id}</div>
-                  <div className="text-sm text-white/70 truncate">{item.message}</div>
+                  <div className="text-sm text-white/70 truncate">
+                    {item.message}
+                  </div>
                 </div>
                 <div className="text-xs text-white/50 whitespace-nowrap">
                   {new Date(item.ts).toLocaleTimeString()}
