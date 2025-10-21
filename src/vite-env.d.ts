@@ -9,6 +9,8 @@ declare module '@point-of-sale/webcam-barcode-scanner' {
     debug?: boolean;
     scanInterval?: number;
     cooldownTime?: number;
+    workerPath?: string | null;
+    binaryPath?: string | null;
     resolution?: {
       width?: number;
       height?: number;

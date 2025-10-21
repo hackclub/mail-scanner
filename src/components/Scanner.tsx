@@ -27,7 +27,8 @@ export function Scanner({ enabled, onResult }: ScannerProps) {
     }
 
     console.log("Initializing scanner...");
-    const scanner = new BarcodeScanner({
+
+    const scannerOptions: any = {
       allowedSymbologies: ["qr-code"],
       beep: true,
       preview: {
@@ -44,7 +45,16 @@ export function Scanner({ enabled, onResult }: ScannerProps) {
           outline: true,
         },
       },
-    });
+    };
+
+    // Only set explicit paths in production
+    if (import.meta.env.PROD) {
+      const origin = window.location.origin;
+      scannerOptions.workerPath = `${origin}/webcam-barcode-scanner.worker.js`;
+      scannerOptions.binaryPath = `${origin}/webcam-barcode-scanner.wasm`;
+    }
+
+    const scanner = new BarcodeScanner(scannerOptions);
 
     scanner.addEventListener("barcode", (event: { value: string }) => {
       console.log("Scanned:", event.value);
