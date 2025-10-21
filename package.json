@@ -16,7 +16,8 @@
     "@point-of-sale/webcam-barcode-scanner": "^2.0.5",
     "express": "^4.21.2",
     "react": "^19.1.1",
-    "react-dom": "^19.1.1"
+    "react-dom": "^19.1.1",
+    "react-qr-code": "^2.0.18"
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",

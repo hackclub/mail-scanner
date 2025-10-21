@@ -1,4 +1,4 @@
-export type Status = "idle" | "processing" | "success" | "error" | "duplicate";
+export type Status = "idle" | "processing" | "success" | "error" | "duplicate" | "apiKeyUpdated";
 
 export interface HistoryItem {
   id: string;

@@ -89,6 +89,15 @@ function App() {
             message: "Ready to scan",
           }));
         }, 5000);
+      } else if (status === "apiKeyUpdated") {
+        timeoutRef.current = window.setTimeout(() => {
+          timeoutRef.current = null;
+          setState((prev) => ({
+            ...prev,
+            status: "idle",
+            message: "Ready to scan",
+          }));
+        }, 5000);
       }
     },
     []
@@ -103,6 +112,17 @@ function App() {
 
   const handleScan = useCallback(
     async (text: string) => {
+      // Check if it's an API key first
+      const trimmedText = text.trim();
+      if (trimmedText.startsWith("th_api_live_")) {
+        saveApiKey(trimmedText);
+        setState((prev) => ({ ...prev, apiKey: trimmedText }));
+        playSuccess();
+        setStatus("apiKeyUpdated", "API key updated", null);
+        setHasStarted(true);
+        return;
+      }
+
       if (processingRef.current) return;
 
       const letterId = parseLetterId(text);
@@ -205,8 +225,6 @@ function App() {
   };
 
   const handleChangeApiKey = () => {
-    clearApiKey();
-    setState((prev) => ({ ...prev, apiKey: "" }));
     setShowApiKeyModal(true);
   };
 
@@ -216,6 +234,11 @@ function App() {
   };
 
   const handleStart = () => {
+    setHasStarted(true);
+  };
+
+  const handleScanApiKeyRequest = () => {
+    setShowApiKeyModal(false);
     setHasStarted(true);
   };
 
@@ -229,6 +252,8 @@ function App() {
         return "bg-red-600";
       case "duplicate":
         return "bg-red-600";
+      case "apiKeyUpdated":
+        return "bg-blue-600";
       default:
         return "bg-gray-900";
     }
@@ -246,7 +271,14 @@ function App() {
       className={`min-h-screen ${getBackgroundClass()} text-white`}
       style={getAnimationStyle()}
     >
-      {showApiKeyModal && <ApiKeyModal onSubmit={handleApiKeySubmit} />}
+      {showApiKeyModal && (
+        <ApiKeyModal
+          onSubmit={handleApiKeySubmit}
+          onScanRequest={handleScanApiKeyRequest}
+          onClose={state.apiKey ? () => setShowApiKeyModal(false) : undefined}
+          existingApiKey={state.apiKey}
+        />
+      )}
 
       {!hasStarted && !showApiKeyModal && state.apiKey && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
@@ -263,7 +295,7 @@ function App() {
         </div>
       )}
 
-      {state.apiKey && !showApiKeyModal && hasStarted && (
+      {!showApiKeyModal && hasStarted && (
         <Scanner enabled={true} onResult={handleScan} />
       )}
 
