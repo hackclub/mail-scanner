@@ -11,13 +11,31 @@ npm install
 npm run dev
 ```
 
-### Production Build
+The Vite dev server includes a proxy to bypass CORS during development.
+
+### Docker Deployment (Recommended)
+
+```bash
+# Build the Docker image
+docker build -t mail-scanner .
+
+# Run the container
+docker run -p 3000:3000 mail-scanner
+
+# Or with a custom port
+docker run -p 8080:8080 -e PORT=8080 mail-scanner
+```
+
+The app will be available at `http://localhost:3000` (or your custom port).
+
+### Manual Production Build
 
 ```bash
 npm run build
+npm start
 ```
 
-This creates a static site in the `dist/` directory that can be deployed anywhere.
+This builds the frontend and starts the Express server on port 3000.
 
 ## Usage
 
@@ -41,31 +59,28 @@ This creates a static site in the `dist/` directory that can be deployed anywher
 
 4. **View History**: Previously scanned letters appear in the history list at the bottom
 
+## Features
+
+- **QR Code Scanner**: Real-time scanning with webcam preview
+- **API Key Sharing**: Generate QR codes to share API keys across devices
+- **Duplicate Detection**: Prevents scanning the same letter twice
+- **Status Colors**: Visual feedback for scan results
+- **History Tracking**: View all scanned letters with timestamps
+- **Audio Feedback**: Different sounds for success, error, and duplicate scans
+
 ## API Integration
 
-The app interacts with the Hack Club Mail API:
+For CORS reasons, there is an express server that proxies requests to the Hack Club Mail API:
 
-- `POST /api/v1/letters/{id}/mark_mailed` - Mark a letter as mailed
-- `GET /api/v1/letters/{id}` - Get letter status (for duplicate checking)
+- `POST /api/letters/{id}/mark_mailed` → `https://mail.hackclub.com/api/v1/letters/{id}/mark_mailed`
+- `GET /api/letters/{id}` → `https://mail.hackclub.com/api/v1/letters/{id}`
 
-## Project Structure
+API keys are passed from the client through the proxy and never stored server-side.
 
-```
-src/
-├── components/
-│   ├── Scanner.tsx          # QR scanner wrapper
-│   ├── HistoryList.tsx      # Scan history display
-│   └── ApiKeyModal.tsx      # API key input modal
-├── hooks/
-│   └── useErrorSound.ts     # Error sound hook
-├── utils/
-│   ├── api.ts               # API client functions
-│   ├── letterParser.ts      # Letter ID parsing
-│   └── storage.ts           # localStorage utilities
-├── types.ts                 # TypeScript types
-└── App.tsx                  # Main app component
-```
+## Environment Variables
 
-## License
+The app requires no configuration - users provide their own API keys in the UI.
 
-MIT
+**Optional:**
+
+- `PORT` - Server port (default: `3000`)
