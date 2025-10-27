@@ -17,7 +17,6 @@ export function KeyboardScanner({ enabled, onResult }: KeyboardScannerProps) {
   }, [onResult]);
 
   useEffect(() => {
-    console.log("KeyboardScanner useEffect running", { enabled });
     if (!enabled) {
       console.log("Keyboard scanner effect: skipped", { enabled });
       return;
@@ -52,18 +51,8 @@ export function KeyboardScanner({ enabled, onResult }: KeyboardScannerProps) {
     const scanner = new KeyboardBarcodeScanner(scannerOptions);
 
     scanner.addEventListener("barcode", (event: any) => {
-      // console.log("Scanned (keyboard) - RAW EVENT:", event);
-      // console.log("Scanned (keyboard) - Value:", event.value);
-      // console.log("Scanned (keyboard) - Symbology:", event.symbology);
+      console.log("Scanned:", event.value);
       onResultRef.current(event.value);
-    });
-
-    scanner.addEventListener("connected", (device: any) => {
-      console.log("Scanner connected event:", device);
-    });
-
-    scanner.addEventListener("disconnected", () => {
-      console.log("Scanner disconnected event");
     });
 
     scanner
