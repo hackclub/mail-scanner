@@ -13,6 +13,7 @@
     "start": "node server.js"
   },
   "dependencies": {
+    "@point-of-sale/keyboard-barcode-scanner": "^1.1.4",
     "@point-of-sale/webcam-barcode-scanner": "^2.0.5",
     "express": "^4.21.2",
     "react": "^19.1.1",

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Scanner } from "./components/Scanner";
+import { KeyboardScanner } from "./components/KeyboardScanner";
 import { HistoryList } from "./components/HistoryList";
 import { ApiKeyModal } from "./components/ApiKeyModal";
 import type { AppState, HistoryItem, Status } from "./types";
@@ -22,7 +23,13 @@ function App() {
     history: [],
   });
   const [showApiKeyModal, setShowApiKeyModal] = useState(false);
+  const [shareMode, setShareMode] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
+  const [scannerMode, setScannerMode] = useState<"webcam" | "keyboard">(
+    "webcam"
+  );
+  const [isPageVisible, setIsPageVisible] = useState(!document.hidden);
+  const [isWindowFocused, setIsWindowFocused] = useState(true);
   const { playError, playDuplicate, playSuccess } = useErrorSound();
   const processingRef = useRef(false);
   const successSetRef = useRef<Set<string>>(new Set());
@@ -56,6 +63,25 @@ function App() {
   useEffect(() => {
     saveHistory(state.history);
   }, [state.history]);
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      setIsPageVisible(!document.hidden);
+    };
+
+    const handleFocus = () => setIsWindowFocused(true);
+    const handleBlur = () => setIsWindowFocused(false);
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("focus", handleFocus);
+    window.addEventListener("blur", handleBlur);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("focus", handleFocus);
+      window.removeEventListener("blur", handleBlur);
+    };
+  }, []);
 
   const setStatus = useCallback(
     (status: Status, message: string, lastLetterId: string | null = null) => {
@@ -232,11 +258,16 @@ function App() {
     [state.apiKey, setStatus, addToHistory, playError]
   );
 
-  const handleApiKeySubmit = (apiKey: string, store: boolean) => {
+  const handleApiKeySubmit = (
+    apiKey: string,
+    store: boolean,
+    mode: "webcam" | "keyboard"
+  ) => {
     if (store) {
       saveApiKey(apiKey);
     }
     setState((prev) => ({ ...prev, apiKey }));
+    setScannerMode(mode);
     setShowApiKeyModal(false);
     setHasStarted(true);
   };
@@ -245,16 +276,40 @@ function App() {
     setShowApiKeyModal(true);
   };
 
+  const handleShareApiKey = () => {
+    setShareMode(true);
+    setShowApiKeyModal(true);
+  };
+
+  const handleCloseApiKeyModal = () => {
+    setShareMode(false);
+    setShowApiKeyModal(false);
+  };
+
   const handleClearHistory = () => {
     setState((prev) => ({ ...prev, history: [] }));
     successSetRef.current.clear();
   };
 
-  const handleStart = () => {
+  const handleStartWebcam = () => {
+    setScannerMode("webcam");
+    setHasStarted(true);
+  };
+
+  const handleStartKeyboard = () => {
+    console.log("Starting keyboard scanner mode");
+    setScannerMode("keyboard");
     setHasStarted(true);
   };
 
   const handleScanApiKeyRequest = () => {
+    setScannerMode("webcam");
+    setShowApiKeyModal(false);
+    setHasStarted(true);
+  };
+
+  const handleScanKeyboardApiKeyRequest = () => {
+    setScannerMode("keyboard");
     setShowApiKeyModal(false);
     setHasStarted(true);
   };
@@ -292,8 +347,10 @@ function App() {
         <ApiKeyModal
           onSubmit={handleApiKeySubmit}
           onScanRequest={handleScanApiKeyRequest}
-          onClose={state.apiKey ? () => setShowApiKeyModal(false) : undefined}
+          onScanKeyboardRequest={handleScanKeyboardApiKeyRequest}
+          onClose={state.apiKey ? handleCloseApiKeyModal : undefined}
           existingApiKey={state.apiKey}
+          startInShareMode={shareMode}
         />
       )}
 
@@ -303,25 +360,82 @@ function App() {
             <h2 className="text-2xl font-bold mb-4 text-white">
               Ready to Scan
             </h2>
-            <p className="text-white/80 mb-6">
-              Click the button below to start scanning QR codes
-            </p>
+            <p className="text-white/80 mb-6">Choose your scanning method</p>
             <button
-              onClick={handleStart}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition-colors"
+              onClick={handleStartWebcam}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded transition-colors flex items-center justify-center gap-2"
             >
-              Start Scanning
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
+                />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
+                />
+              </svg>
+              Use Camera
+            </button>
+            <button
+              onClick={handleStartKeyboard}
+              className="w-full mt-3 bg-white/10 hover:bg-white/20 text-white font-bold py-3 px-4 rounded transition-colors flex items-center justify-center gap-2"
+            >
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M13 10V3L4 14h7v7l9-11h-7z"
+                />
+              </svg>
+              Use Physical Scanner
+            </button>
+            <button
+              onClick={handleShareApiKey}
+              className="w-full mt-4 text-white/60 hover:text-white text-sm py-2 transition-colors"
+            >
+              Share Saved API Key
             </button>
           </div>
         </div>
       )}
 
-      {!showApiKeyModal && hasStarted && (
+      {!showApiKeyModal && hasStarted && scannerMode === "webcam" && (
         <Scanner enabled={true} onResult={handleScan} />
       )}
 
+      {!showApiKeyModal && hasStarted && scannerMode === "keyboard" && (
+        <KeyboardScanner enabled={true} onResult={handleScan} />
+      )}
+
+      {(!isPageVisible || !isWindowFocused) && hasStarted && scannerMode === "keyboard" && (
+        <div className="fixed top-0 left-0 right-0 bg-yellow-600 text-white px-4 py-3 text-center z-50 shadow-lg">
+          <p className="font-bold">⚠️ Window not active - Physical scanner input disabled</p>
+          <p className="text-sm mt-1">Click on this window to resume scanning</p>
+        </div>
+      )}
+
       <div className="relative z-10 h-screen flex flex-col overflow-hidden">
-        <div className="flex-1 flex flex-col items-center justify-center p-4 pt-48 md:pt-32 min-h-0">
+        <div
+          className={`flex-1 flex flex-col items-center justify-center p-4 min-h-0 ${
+            scannerMode === "webcam" ? "pt-48 md:pt-32" : ""
+          }`}
+        >
           <div className="text-center">
             <div className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold font-mono mb-4 break-all px-2">
               {state.lastLetterId || "--"}
