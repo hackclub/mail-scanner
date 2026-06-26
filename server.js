@@ -30,8 +30,14 @@ app.get('/api/letters/:id', async (req, res) => {
     return res.status(400).send('Invalid id');
   }
 
-  const upstream = `${UPSTREAM}/api/v1/letters/${encodeURIComponent(id)}`;
-  
+  // Forward the `expand` param (e.g. expand=events) so callers can request the
+  // letter's tracking timeline. Whitelisted to keep the proxy narrow.
+  const expand = typeof req.query.expand === 'string' ? req.query.expand : null;
+  const query = expand && /^[A-Za-z0-9,_-]{1,64}$/.test(expand)
+    ? `?expand=${encodeURIComponent(expand)}`
+    : '';
+  const upstream = `${UPSTREAM}/api/v1/letters/${encodeURIComponent(id)}${query}`;
+
   try {
     const response = await fetch(upstream, {
       method: 'GET',

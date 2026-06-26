@@ -3,9 +3,10 @@ import { Scanner } from "./components/Scanner";
 import { KeyboardScanner } from "./components/KeyboardScanner";
 import { HistoryList } from "./components/HistoryList";
 import { ApiKeyModal } from "./components/ApiKeyModal";
-import type { AppState, HistoryItem, Status } from "./types";
+import { ScanResultPopup } from "./components/ScanResultPopup";
+import type { AppState, HistoryItem, LetterEvent, Status } from "./types";
 import { parseLetterId } from "./utils/letterParser";
-import { markLetterMailed, getLetterStatus } from "./utils/api";
+import { markLetterMailed, getLetter } from "./utils/api";
 import {
   loadApiKey,
   saveApiKey,
@@ -13,6 +14,18 @@ import {
   saveHistory,
 } from "./utils/storage";
 import { useErrorSound } from "./hooks/useErrorSound";
+
+// `source` values used in the theseus letter timeline (`letter.events`).
+const IVMTR_SOURCE = "USPS IV-MTR";
+const HACKCLUB_SOURCE = "Hack Club";
+
+// Pull just the real USPS postal scans out of a letter's timeline. The rest of
+// the timeline is Hack Club milestones (printed/mailed) which every mailed
+// letter has — what we actually care about is whether the post office has
+// scanned it yet. Events arrive sorted oldest-first.
+function ivmtrEvents(events: LetterEvent[] | undefined): LetterEvent[] {
+  return (events ?? []).filter((e) => e.source === IVMTR_SOURCE);
+}
 
 function App() {
   const [state, setState] = useState<AppState>({
@@ -30,10 +43,17 @@ function App() {
   );
   const [isPageVisible, setIsPageVisible] = useState(!document.hidden);
   const [isWindowFocused, setIsWindowFocused] = useState(true);
+  const [scanResult, setScanResult] = useState<{
+    letterId: string;
+    count: number;
+    lastLocation?: string;
+    mailedAt?: string;
+  } | null>(null);
   const { playError, playDuplicate, playSuccess } = useErrorSound();
   const processingRef = useRef(false);
   const successSetRef = useRef<Set<string>>(new Set());
   const timeoutRef = useRef<number | null>(null);
+  const scanResultTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
     let apiKey = loadApiKey();
@@ -145,6 +165,34 @@ function App() {
     }));
   }, []);
 
+  const showScanResult = useCallback(
+    (letterId: string, events: LetterEvent[] | undefined) => {
+      // Only show when the API actually returned the timeline — otherwise we
+      // can't tell "no tracking yet" from "we didn't ask for tracking".
+      if (!Array.isArray(events)) return;
+      const iv = ivmtrEvents(events);
+      const last = iv[iv.length - 1];
+      // The "marked as mailed" timestamp is the Hack Club mailed milestone.
+      const mailedEvent = events.find(
+        (e) => e.source === HACKCLUB_SOURCE && /mailed/i.test(e.description ?? "")
+      );
+      setScanResult({
+        letterId,
+        count: iv.length,
+        lastLocation: last?.location,
+        mailedAt: mailedEvent?.happened_at,
+      });
+      if (scanResultTimeoutRef.current !== null) {
+        clearTimeout(scanResultTimeoutRef.current);
+      }
+      scanResultTimeoutRef.current = window.setTimeout(() => {
+        scanResultTimeoutRef.current = null;
+        setScanResult(null);
+      }, 6000);
+    },
+    []
+  );
+
   const handleScan = useCallback(
     async (text: string) => {
       // Check if it's an API key first (direct key or URL with hash)
@@ -203,9 +251,10 @@ function App() {
           });
           successSetRef.current.add(letterId);
         } else {
-          const statusData = await getLetterStatus(state.apiKey, letterId);
+          const statusData = await getLetter(state.apiKey, letterId);
+          const letter = statusData?.letter;
 
-          if (statusData?.letter?.status === "mailed") {
+          if (letter?.status === "mailed") {
             playDuplicate();
             setStatus("duplicate", "Letter already marked as mailed", letterId);
             addToHistory({
@@ -213,6 +262,9 @@ function App() {
               status: "duplicate",
               message: "Already mailed",
             });
+            // Additively surface the USPS tracking state in a small popup —
+            // the page's existing "already mailed" behavior above is untouched.
+            showScanResult(letterId, letter.events);
           } else if (response.status === 401) {
             playError();
             setStatus("error", "Invalid API key", letterId);
@@ -255,7 +307,7 @@ function App() {
         processingRef.current = false;
       }
     },
-    [state.apiKey, setStatus, addToHistory, playError]
+    [state.apiKey, setStatus, addToHistory, playError, showScanResult]
   );
 
   const handleApiKeySubmit = (
@@ -343,6 +395,16 @@ function App() {
       className={`min-h-screen ${getBackgroundClass()} text-white`}
       style={getAnimationStyle()}
     >
+      {scanResult && (
+        <ScanResultPopup
+          letterId={scanResult.letterId}
+          count={scanResult.count}
+          lastLocation={scanResult.lastLocation}
+          mailedAt={scanResult.mailedAt}
+          onClose={() => setScanResult(null)}
+        />
+      )}
+
       {showApiKeyModal && (
         <ApiKeyModal
           onSubmit={handleApiKeySubmit}
